@@ -48,11 +48,7 @@ const PaymentPage = ({
   if (txStatus === "REJECTED")
     return <p>Transaction is already rejected by admin</p>;
 
-  return (
-    <div>
-      <PaymentForm transaction={transaction} event={transaction.event} />
-    </div>
-  );
+  return <PaymentForm transaction={transaction} event={transaction.event} />;
 };
 
 export default PaymentPage;

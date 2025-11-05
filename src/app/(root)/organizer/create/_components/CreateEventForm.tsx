@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { CalendarIcon, ChevronDown, Plus, Ticket } from "lucide-react";
+import { CalendarIcon, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import {
@@ -35,6 +35,17 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { useRouter } from "next/navigation";
 import { createEvent } from "@/app/actions/event/createEvent";
+
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 type Props = {
   locations: string[];
@@ -92,12 +103,12 @@ const CreateEventSchema = z
       path: ["end_date"],
     }
   );
-
 type CreateEventInput = z.infer<typeof CreateEventSchema>;
 
 export default function CreateEventForm({ locations, categories }: Props) {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const router = useRouter();
 
@@ -127,11 +138,14 @@ export default function CreateEventForm({ locations, categories }: Props) {
   const onSubmit = async (data: CreateEventInput) => {
     try {
       setIsLoading(true);
-      const resWithData = await createEvent(data);
-      if (resWithData) return router.push("/organizer");
-      setIsLoading(false);
-    } catch (error) {
-      console.log(error);
+      const res = await createEvent(data);
+      if (res) {
+        console.log(res);
+        router.push("/organizer");
+      }
+    } catch (err) {
+      console.log(err);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -152,8 +166,8 @@ export default function CreateEventForm({ locations, categories }: Props) {
           </p>
         </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {/* 🧾 Event Details */}
+        <form className="space-y-6">
+          {/* Event Details Card */}
           <Card className="shadow-lg border-primary/10">
             <CardHeader>
               <CardTitle>Event Details</CardTitle>
@@ -162,12 +176,10 @@ export default function CreateEventForm({ locations, categories }: Props) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Event Name */}
               <Field label="Event Name" error={errors.name?.message}>
                 <Input placeholder="Enter event name" {...register("name")} />
               </Field>
 
-              {/* Location + Price */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Field label="Location" error={errors.location?.message}>
                   <Select onValueChange={(val) => setValue("location", val)}>
@@ -185,17 +197,10 @@ export default function CreateEventForm({ locations, categories }: Props) {
                 </Field>
 
                 <Field label="Price (IDR)" error={errors.price?.message}>
-                  <div className="space-y-1">
-                    <Input type="number" {...register("price")} />
-                    <p className="text-xs text-muted-foreground">
-                      Leave it <span className="font-semibold">0</span> if the
-                      event is free.
-                    </p>
-                  </div>
+                  <Input type="number" {...register("price")} />
                 </Field>
               </div>
 
-              {/* Dates */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <DatePicker
                   label="Start Date"
@@ -211,26 +216,20 @@ export default function CreateEventForm({ locations, categories }: Props) {
                 />
               </div>
 
-              {/* Capacity */}
               <Field label="Total Seats" error={errors.capacity_seat?.message}>
                 <Input type="number" {...register("capacity_seat")} />
               </Field>
 
-              {/* Description */}
               <Field
                 label="Description (optional)"
                 error={errors.description?.message}
               >
-                <Textarea
-                  rows={4}
-                  placeholder="Tell people about your event..."
-                  {...register("description")}
-                />
+                <Textarea rows={4} {...register("description")} />
               </Field>
             </CardContent>
           </Card>
 
-          {/* 🏷️ Categories */}
+          {/* Categories */}
           <Card className="shadow-lg border-primary/10">
             <CardHeader>
               <CardTitle>Categories</CardTitle>
@@ -242,8 +241,8 @@ export default function CreateEventForm({ locations, categories }: Props) {
                   const isChecked = selectedCategories.includes(category);
                   return (
                     <Label
-                      htmlFor={category}
                       key={category}
+                      htmlFor={category}
                       className={cn(
                         "flex items-center space-x-2 p-3 rounded-lg border-2 transition-all cursor-pointer",
                         isChecked
@@ -254,19 +253,17 @@ export default function CreateEventForm({ locations, categories }: Props) {
                       <Checkbox
                         id={category}
                         onClick={() => {
-                          if (isChecked) {
+                          if (isChecked)
                             setSelectedCategories((prev) =>
                               prev.filter((c) => c !== category)
                             );
-                          } else {
+                          else
                             setSelectedCategories((prev) => [
                               ...prev,
                               category,
                             ]);
-                          }
                         }}
                         checked={isChecked}
-                        className="cursor-pointer"
                       />
                       {category}
                     </Label>
@@ -281,22 +278,50 @@ export default function CreateEventForm({ locations, categories }: Props) {
             </CardContent>
           </Card>
 
-          {/* Submit */}
-          <Button
-            disabled={isLoading}
-            type="submit"
-            size="lg"
-            className="w-full cursor-pointer"
-          >
-            <Plus className="mr-2 h-5 w-5" /> Create Event
-          </Button>
+          {/* Submit Button with Dialog */}
+          <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="lg"
+                className="w-full flex justify-center items-center gap-2"
+              >
+                <Plus className="h-5 w-5" /> Create Event
+              </Button>
+            </AlertDialogTrigger>
+
+            <AlertDialogContent className="sm:max-w-lg">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Event Creation</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to create this event? Once submitted, it
+                  will be visible to attendees.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <AlertDialogFooter className="flex justify-end gap-2">
+                <AlertDialogCancel asChild>
+                  <Button className="bg-red-600 text-white hover:bg-red-700">
+                    Cancel
+                  </Button>
+                </AlertDialogCancel>
+
+                <Button
+                  className="bg-green-600 text-white hover:bg-green-700"
+                  onClick={handleSubmit(onSubmit)}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Creating..." : "Confirm"}
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </form>
       </div>
     </div>
   );
 }
 
-/* ---------- Reusable Small Components ---------- */
+/* ---------- Reusable Components ---------- */
 
 function Field({
   label,

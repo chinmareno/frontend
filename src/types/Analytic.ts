@@ -1,3 +1,11 @@
+export type EventAnalytic = {
+  grossRevenue: number;
+  administrativeExpense: number;
+  marketingExpense: number;
+  netRevenue: number;
+  totalTicketsSold: number;
+};
+
 export type OrganizerAnalytic = {
   periodType: "year" | "month" | "day";
   periodValue: number;

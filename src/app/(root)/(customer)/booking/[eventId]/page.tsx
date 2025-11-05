@@ -38,21 +38,32 @@ export default function PaymentEventPage({
       if (!user) {
         return router.push("/login");
       }
-      const transactions = await getUserTransactions();
-      const couponsData = await getUserCoupons();
-      if (couponsData) setCoupons(couponsData);
+      const paidTransactions = await getUserTransactions({
+        status: ["DONE", "WAITING_FOR_ADMIN", "WAITING_FOR_PAYMENT"],
+        eventId,
+      });
 
-      const isPaidOrBought = transactions?.some(
-        (t) =>
-          t.event_id === event?.id &&
-          t.user_id === user?.id &&
-          (t.status === "DONE" || t.status === "WAITING_FOR_ADMIN")
+      if (!paidTransactions) return;
+      console.log(paidTransactions[0]);
+      const isPaidOrBought = paidTransactions.some(
+        ({ status }) => status === "DONE" || status == "WAITING_FOR_ADMIN"
       );
-
+      const isUncomplete = paidTransactions.some(
+        ({ status }) => status == "WAITING_FOR_PAYMENT"
+      );
+      if (isUncomplete) {
+        const transactionId = paidTransactions[0].id;
+        return router.push("/payment/" + transactionId);
+      }
       if (isPaidOrBought) {
+        console.log(paidTransactions);
         toast.info("You already ordered this event");
         return router.push("/");
       }
+
+      const couponsData = await getUserCoupons();
+      if (couponsData) setCoupons(couponsData);
+
       setIsLoading(false);
     };
     initialFetch();

@@ -14,6 +14,9 @@ import { Attendee } from "@/types/Attendee";
 import { getOrganizerEventRatings } from "@/app/actions/rating/getOrganizerEventRatings";
 import { EventRating } from "@/types/EventRating";
 import ReviewList from "./_components/ReviewList";
+import Analytic from "./_components/Analytic";
+import { EventAnalytic } from "@/types/Analytic";
+import { getEventAnalytic } from "@/app/actions/analytic/getEventAnalytic";
 
 export default function EventDetailPage({
   params,
@@ -30,6 +33,7 @@ export default function EventDetailPage({
   >(null);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [analytic, setAnalytic] = useState<EventAnalytic | null>(null);
   const [eventRatings, setEventRatings] = useState<
     (EventRating & { user: User })[]
   >([]);
@@ -41,6 +45,7 @@ export default function EventDetailPage({
       const eventData = await getEventById(eventId);
       const vouchersData = await getVouchersByEventId(eventId);
       const eventRatingsData = await getOrganizerEventRatings(eventId);
+      const analyticData = await getEventAnalytic(eventId);
       if (eventRatingsData) setEventRatings(eventRatingsData);
       if (eventData) {
         setEvent(eventData);
@@ -48,6 +53,7 @@ export default function EventDetailPage({
         if (attendeesData) setAttendees(attendeesData);
       }
       if (vouchersData) setVouchers(vouchersData);
+      if (analyticData) setAnalytic(analyticData);
       setIsLoading(false);
     };
     initialFetch();
@@ -72,6 +78,7 @@ export default function EventDetailPage({
       <div className="w-full max-w-3xl mx-auto p-6">
         <ReviewList ratings={eventRatings} />
       </div>
+      {analytic && <Analytic analytics={analytic} />}
     </div>
   );
 }

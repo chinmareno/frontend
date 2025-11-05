@@ -2,7 +2,7 @@ import { fetcher } from "../../../lib/fetcher";
 import { Transaction, TransactionStatus } from "@/types/Transaction";
 
 type Query = {
-  status?: TransactionStatus;
+  status?: TransactionStatus[];
   eventId?: string;
 };
 
@@ -13,7 +13,7 @@ export const getUserTransactions = async (
   if (query) {
     const { status, eventId } = query;
     const params = new URLSearchParams();
-    if (status) params.append("status", status);
+    if (status) params.append("status", status.join(","));
     if (eventId) params.append("event_id", eventId);
     queryString = params.toString();
   }

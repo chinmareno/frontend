@@ -255,13 +255,26 @@ export default function Page() {
           open={openConfirmationDialog}
           setOpen={setOpenConfirmationDialog}
           onConfirm={async () => {
-            const uncompleteTransactions = await getUserTransactions({
+            const uniqueTransactions = await getUserTransactions({
               eventId,
-              status: "WAITING_FOR_PAYMENT",
+              status: ["WAITING_FOR_PAYMENT", "WAITING_FOR_ADMIN", "DONE"],
             });
-            const uncompleteTransactionId = uncompleteTransactions?.[0]?.id;
-            if (uncompleteTransactionId) {
-              return router.push("/payment/" + uncompleteTransactionId);
+            const uniqueTransactionId = uniqueTransactions?.[0]?.id;
+            if (uniqueTransactionId) {
+              const uniqueTransactionStatus = uniqueTransactions?.[0]?.status;
+              if (uniqueTransactionStatus === "WAITING_FOR_PAYMENT") {
+                return router.push("/payment/" + uniqueTransactionId);
+              }
+              if (uniqueTransactionStatus === "WAITING_FOR_ADMIN") {
+                return toast.info(
+                  "Your payment is received. Waiting for admin approval."
+                );
+              }
+              if (uniqueTransactionStatus === "DONE") {
+                return toast.info(
+                  "Payment already completed. You’re confirmed for the event!"
+                );
+              }
             }
 
             router.push("/booking/" + eventId);

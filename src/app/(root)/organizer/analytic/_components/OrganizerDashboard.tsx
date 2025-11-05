@@ -272,21 +272,23 @@ const OrganizerDashboard = ({
                     </tr>
                   )}
                 </tbody>
-                <tfoot className="bg-muted/30 font-semibold">
-                  <tr>
-                    <td className="p-2">Total</td>
-                    <td className="p-2">{formatIdr(totals.grossRevenue)}</td>
-                    <td className="p-2">{formatIdr(totals.netRevenue)}</td>
-                    <td className="p-2">
-                      {formatIdr(totals.marketingExpense)}
-                    </td>
-                    <td className="p-2">
-                      {formatIdr(totals.administrativeExpense)}
-                    </td>
-                    <td className="p-2">{totals.ticketsSold}</td>
-                    <td className="p-2">{totals.eventsHeld}</td>
-                  </tr>
-                </tfoot>
+                {analytic.length > 0 && (
+                  <tfoot className="bg-muted/30 font-semibold">
+                    <tr>
+                      <td className="p-2">Total</td>
+                      <td className="p-2">{formatIdr(totals.grossRevenue)}</td>
+                      <td className="p-2">{formatIdr(totals.netRevenue)}</td>
+                      <td className="p-2">
+                        {formatIdr(totals.marketingExpense)}
+                      </td>
+                      <td className="p-2">
+                        {formatIdr(totals.administrativeExpense)}
+                      </td>
+                      <td className="p-2">{totals.ticketsSold}</td>
+                      <td className="p-2">{totals.eventsHeld}</td>
+                    </tr>
+                  </tfoot>
+                )}
               </table>
             </div>
           </CardContent>

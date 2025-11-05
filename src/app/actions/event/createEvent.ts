@@ -12,7 +12,7 @@ type Body = {
   description?: string;
 };
 export const createEvent = async (body: Body) => {
-  const events = await fetcher<Event[]>("events/organizer/", {
+  const events = await fetcher<Event[]>("events/", {
     method: "POST",
     body,
   });

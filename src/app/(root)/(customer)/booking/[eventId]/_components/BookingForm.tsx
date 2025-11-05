@@ -8,10 +8,10 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { validateVoucher } from "@/app/actions/voucher/validateVoucher";
 import { Button } from "@/components/ui/button";
-import CreatePaymentButton from "@/components/CreatePaymentButton";
 import SelectCouponDialog from "./SelectCouponDialog";
 import { Coupon } from "@/types/Coupon";
 import { User } from "@/types/User";
+import CreatePaymentButton from "./CreatePaymentButton";
 
 type Props = {
   event: Event & {

@@ -2,6 +2,13 @@
 
 import { acceptTransaction } from "@/app/actions/transaction/acceptTransaction";
 import { rejectTransaction } from "@/app/actions/transaction/rejectTransaction";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -22,9 +29,12 @@ export default function AttendeesList({ attendees: initialAttendees }: Props) {
   const [selectedAttendee, setSelectedAttendee] = useState<Attendee | null>(
     null
   );
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+
   const displayedAttendees = attendees.filter((attendee) =>
     isAccepted ? attendee.is_accepted : !attendee.is_accepted
   );
+
   const handleReject = async (transactionId: string) => {
     setIsLoading(true);
     const res = await rejectTransaction(transactionId);
@@ -35,9 +45,7 @@ export default function AttendeesList({ attendees: initialAttendees }: Props) {
       toast.success("Attendee rejected successfully");
       setSelectedAttendee(null);
     }
-
     setIsLoading(false);
-    window.location.reload();
   };
 
   const handleAccept = async (transactionId: string) => {
@@ -56,11 +64,11 @@ export default function AttendeesList({ attendees: initialAttendees }: Props) {
       setSelectedAttendee(null);
     }
     setIsLoading(false);
-    window.location.reload();
   };
 
   return (
     <div className="border rounded-lg p-4">
+      {/* Toggle Accepted / Unaccepted */}
       <div className="flex gap-1.5">
         <Label
           className={`flex items-center gap-2 mb-4 ${
@@ -69,19 +77,16 @@ export default function AttendeesList({ attendees: initialAttendees }: Props) {
         >
           Unaccepted
         </Label>
-
-        <Switch
-          checked={isAccepted}
-          onCheckedChange={(val) => setIsAccepted(val)}
-        />
+        <Switch checked={isAccepted} onCheckedChange={setIsAccepted} />
         <Label
-          className={`flex items-center  gap-2 mb-4 ${
+          className={`flex items-center gap-2 mb-4 ${
             isAccepted ? "font-bold" : "font-light"
           }`}
         >
           Accepted
         </Label>
       </div>
+
       <h2 className="font-semibold text-lg mb-3">Attendees</h2>
       {displayedAttendees.length === 0 ? (
         <p className="text-sm text-gray-500">No attendees yet.</p>
@@ -108,7 +113,7 @@ export default function AttendeesList({ attendees: initialAttendees }: Props) {
                 <span className="font-medium">{attendee.username}</span>
               </div>
 
-              {/* Button */}
+              {/* View Details Button */}
               <button
                 onClick={() => setSelectedAttendee(attendee)}
                 className="px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 text-sm"
@@ -120,7 +125,7 @@ export default function AttendeesList({ attendees: initialAttendees }: Props) {
         </ul>
       )}
 
-      {/* Modal for attendee details */}
+      {/* Attendee Modal */}
       {selectedAttendee && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6 relative">
@@ -136,37 +141,38 @@ export default function AttendeesList({ attendees: initialAttendees }: Props) {
 
             <div className="space-y-2 text-sm">
               {selectedAttendee.eventName && (
-                <div className="flex flex-col">
+                <div>
                   <span className="font-medium">Event: </span>
                   {selectedAttendee.eventName}
                 </div>
               )}
               {selectedAttendee.eventPrice > 0 && (
-                <div className="flex flex-col">
+                <div>
                   <span className="font-medium">Price: </span>
                   {formatIdr(selectedAttendee.eventPrice)}
                 </div>
               )}
               {selectedAttendee.couponDiscount > 0 && (
-                <div className="flex flex-col">
+                <div>
                   <span className="font-medium">Coupon Discount: </span>
                   {formatIdr(selectedAttendee.couponDiscount)}
                 </div>
               )}
               {selectedAttendee.voucherDiscount > 0 && (
-                <div className="flex flex-col">
+                <div>
                   <span className="font-medium">Voucher Discount: </span>
-                  {formatIdr(selectedAttendee.voucherDiscount)}
+                  {formatIdr(selectedAttendee.voucherDiscount)}{" "}
                   <span className="font-medium">Voucher Code: </span>
                   {selectedAttendee.voucherCode}
                 </div>
               )}
               {selectedAttendee.amountPaid > 0 && (
-                <div className="flex flex-col">
+                <div>
                   <span className="font-medium">Amount Paid: </span>
                   {formatIdr(selectedAttendee.amountPaid)}
                 </div>
               )}
+
               <div className="mt-2">
                 <span className="font-medium">Payment Proof: </span>
                 {selectedAttendee.payment_proof_url ? (
@@ -178,31 +184,62 @@ export default function AttendeesList({ attendees: initialAttendees }: Props) {
                   <p>No payment proof because amount to paid is 0 (free)</p>
                 )}
               </div>
-              <div className="flex gap-3 mt-3">
-                {!isAccepted && (
-                  <>
-                    <Button
-                      variant="destructive"
-                      onClick={() =>
-                        handleReject(selectedAttendee.transactionId)
-                      }
-                      disabled={isLoading}
-                    >
-                      Reject
-                    </Button>
-                    <Button
-                      onClick={() =>
-                        handleAccept(selectedAttendee.transactionId)
-                      }
-                      disabled={isLoading}
-                    >
-                      Accept
-                    </Button>
-                  </>
-                )}
-              </div>
+
+              {!isAccepted && (
+                <div className="flex gap-3 mt-3">
+                  <Button
+                    variant="destructive"
+                    onClick={() => setIsRejectDialogOpen(true)}
+                    disabled={isLoading}
+                  >
+                    Reject
+                  </Button>
+                  <Button
+                    onClick={() => handleAccept(selectedAttendee.transactionId)}
+                    disabled={isLoading}
+                  >
+                    Accept
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Reject Confirmation Dialog */}
+          {isRejectDialogOpen && (
+            <Dialog
+              open={isRejectDialogOpen}
+              onOpenChange={setIsRejectDialogOpen}
+            >
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Reject Attendee</DialogTitle>
+                </DialogHeader>
+                <p className="mt-2">
+                  Are you sure you want to reject {selectedAttendee.username}?
+                </p>
+                <DialogFooter className="mt-4 flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsRejectDialogOpen(false)}
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      handleReject(selectedAttendee.transactionId);
+                      setIsRejectDialogOpen(false);
+                    }}
+                    disabled={isLoading}
+                  >
+                    Confirm
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       )}
     </div>

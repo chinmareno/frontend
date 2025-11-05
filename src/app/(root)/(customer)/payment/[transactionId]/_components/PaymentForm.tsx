@@ -5,13 +5,11 @@ import { format } from "date-fns";
 import { Event } from "@/types/Event";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
-import { completeTransaction } from "@/app/actions/transaction/completeTransaction";
 import { formatIdr } from "@/lib/formatIdr";
-import { supabase } from "../../../../../../../supabase/client";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { cancelTransaction } from "@/app/actions/transaction/cancelTransaction";
 import { Transaction } from "@/types/Transaction";
+import { PaymentButton } from "./PaymentButton";
+import { CancelPaymentButton } from "./CancelPaymentButton";
 
 type Props = {
   event: Event;
@@ -20,7 +18,6 @@ type Props = {
 
 export default function PaymentForm({ event, transaction }: Props) {
   const [isPaid, setIsPaid] = useState(false);
-  const [isPaying, setIsPaying] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(transaction.secondsLeft ?? 0);
   const [files, setFiles] = useState<FileList | null>(null);
 
@@ -44,37 +41,6 @@ export default function PaymentForm({ event, transaction }: Props) {
 
     return () => clearInterval(timer);
   }, []);
-
-  const handlePayment = async () => {
-    const imageFile = files?.[0];
-    if (!imageFile) return toast.error("Please upload a payment proof image.");
-
-    setIsPaying(true);
-    const { error, data: imageData } = await supabase.storage
-      .from("payment_proof")
-      .upload(transaction.id + new Date(), imageFile, { upsert: true });
-    if (error || !imageData) {
-      setIsPaying(false);
-      return toast.error("Please upload a valid image file.");
-    }
-    const { data: urlData } = supabase.storage
-      .from("payment_proof")
-      .getPublicUrl(imageData.path);
-
-    const res = await completeTransaction(transaction.id, {
-      payment_proof_url: urlData.publicUrl,
-    });
-
-    if (res) {
-      setIsPaid(true);
-    }
-    setIsPaying(false);
-  };
-
-  const handleCancel = async () => {
-    await cancelTransaction(transaction.id);
-    router.push("/");
-  };
 
   return (
     <div className="max-w-3xl mx-auto py-12 px-6 space-y-10">
@@ -142,18 +108,12 @@ export default function PaymentForm({ event, transaction }: Props) {
               for this event.
             </p>
 
-            <button
-              onClick={handlePayment}
-              disabled={isPaying}
-              className={`w-full py-3 rounded-xl text-white font-medium transition ${
-                isPaying
-                  ? "bg-gray-400 cursor-wait"
-                  : "bg-green-600 hover:bg-green-700"
-              }`}
-            >
-              {isPaying ? "Processing..." : "Pay Now"}
-            </button>
-            <Button onClick={handleCancel}>Cancel this payment</Button>
+            <PaymentButton
+              files={files}
+              transactionId={transaction.id}
+              onSuccess={() => setIsPaid(true)}
+            />
+            <CancelPaymentButton transactionId={transaction.id} />
 
             <p className="text-xs text-gray-400">
               Tips: If you see the time almost run out, just cancel and make a
